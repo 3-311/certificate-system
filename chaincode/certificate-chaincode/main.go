@@ -1,0 +1,167 @@
+package main
+
+import (
+	"encoding/json"
+	"fmt"
+	"log"
+
+	"github.com/hyperledger/fabric-contract-api-go/contractapi"
+)
+
+// Certificate 定义学历证书结构
+type Certificate struct {
+	CertID       string `json:"certId"`
+	StudentName  string `json:"studentName"`
+	IDCard       string `json:"idCard"`
+	School       string `json:"school"`
+	Major        string `json:"major"`
+	GraduateDate string `json:"graduateDate"`
+	CertHash     string `json:"certHash"`
+	Issuer       string `json:"issuer"`
+	Timestamp    string `json:"timestamp"`
+	Status       string `json:"status"`
+	TxID         string `json:"txId"`
+}
+
+// SmartContract 定义智能合约
+type SmartContract struct {
+	contractapi.Contract
+}
+
+// IssueCertificate 颁发证书
+func (s *SmartContract) IssueCertificate(ctx contractapi.TransactionContextInterface, certID string, studentName string, idCard string, school string, major string, graduateDate string, certHash string) error {
+	// 检查证书是否已存在
+	existing, err := ctx.GetStub().GetState(certID)
+	if err != nil {
+		return fmt.Errorf("failed to read from world state: %v", err)
+	}
+	if existing != nil {
+		return fmt.Errorf("certificate %s already exists", certID)
+	}
+
+	// 获取交易发起者
+	clientIdentity := ctx.GetClientIdentity()
+	issuer, err := clientIdentity.GetMSPID()
+	if err != nil {
+		return fmt.Errorf("failed to get client MSP ID: %v", err)
+	}
+
+	// 获取交易ID
+	txID := ctx.GetStub().GetTxID()
+
+	// 创建证书对象
+	certificate := Certificate{
+		CertID:       certID,
+		StudentName:  studentName,
+		IDCard:       idCard,
+		School:       school,
+		Major:        major,
+		GraduateDate: graduateDate,
+		CertHash:     certHash,
+		Issuer:       issuer,
+		Timestamp:    ctx.GetStub().GetTxTimestamp().AsTime().String(),
+		Status:       "active",
+		TxID:         txID,
+	}
+
+	// 序列化为JSON
+	certJSON, err := json.Marshal(certificate)
+	if err != nil {
+		return fmt.Errorf("failed to marshal certificate: %v", err)
+	}
+
+	// 写入世界状态
+	err = ctx.GetStub().PutState(certID, certJSON)
+	if err != nil {
+		return fmt.Errorf("failed to put state: %v", err)
+	}
+
+	return nil
+}
+
+// QueryCertificate 查询证书
+func (s *SmartContract) QueryCertificate(ctx contractapi.TransactionContextInterface, certID string) (*Certificate, error) {
+	certJSON, err := ctx.GetStub().GetState(certID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read from world state: %v", err)
+	}
+	if certJSON == nil {
+		return nil, fmt.Errorf("certificate %s does not exist", certID)
+	}
+
+	var certificate Certificate
+	err = json.Unmarshal(certJSON, &certificate)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal certificate: %v", err)
+	}
+
+	return &certificate, nil
+}
+
+// RevokeCertificate 注销证书
+func (s *SmartContract) RevokeCertificate(ctx contractapi.TransactionContextInterface, certID string) error {
+	// 查询现有证书
+	certificate, err := s.QueryCertificate(ctx, certID)
+	if err != nil {
+		return err
+	}
+
+	// 检查是否已注销
+	if certificate.Status == "revoked" {
+		return fmt.Errorf("certificate %s is already revoked", certID)
+	}
+
+	// 修改状态
+	certificate.Status = "revoked"
+
+	// 序列化并更新
+	certJSON, err := json.Marshal(certificate)
+	if err != nil {
+		return fmt.Errorf("failed to marshal certificate: %v", err)
+	}
+
+	err = ctx.GetStub().PutState(certID, certJSON)
+	if err != nil {
+		return fmt.Errorf("failed to put state: %v", err)
+	}
+
+	return nil
+}
+
+// GetAllCertificates 获取所有证书
+func (s *SmartContract) GetAllCertificates(ctx contractapi.TransactionContextInterface) ([]*Certificate, error) {
+	// 使用范围查询获取所有证书
+	resultsIterator, err := ctx.GetStub().GetStateByRange("", "")
+	if err != nil {
+		return nil, fmt.Errorf("failed to get all certificates: %v", err)
+	}
+	defer resultsIterator.Close()
+
+	var certificates []*Certificate
+	for resultsIterator.HasNext() {
+		queryResult, err := resultsIterator.Next()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get next result: %v", err)
+		}
+
+		var certificate Certificate
+		err = json.Unmarshal(queryResult.Value, &certificate)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal certificate: %v", err)
+		}
+		certificates = append(certificates, &certificate)
+	}
+
+	return certificates, nil
+}
+
+func main() {
+	chaincode, err := contractapi.NewChaincode(&SmartContract{})
+	if err != nil {
+		log.Panicf("Error creating certificate chaincode: %v", err)
+	}
+
+	if err := chaincode.Start(); err != nil {
+		log.Panicf("Error starting certificate chaincode: %v", err)
+	}
+}

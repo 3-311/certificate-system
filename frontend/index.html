@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>学历证书防伪核验系统</title>
+    <meta charset="utf-8">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+            font-size: 28px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        /* 标签页样式 */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            justify-content: center;
+        }
+        .tab-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            padding: 12px 30px;
+            font-size: 16px;
+            border-radius: 30px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .tab-btn.active {
+            background: white;
+            color: #667eea;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        .tab-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        /* 卡片样式 */
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+        }
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .card h2 {
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #667eea;
+            display: inline-block;
+        }
+        .full-width {
+            grid-column: span 2;
+        }
+        /* 表单样式 */
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: 500;
+        }
+        input, textarea, select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            font-size: 14px;
+            transition: border 0.3s;
+        }
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: transform 0.2s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+        }
+        .result {
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 14px;
+        }
+        .result.success {
+            background: #d4edda;
+            color: #155724;
+            border-left: 4px solid #28a745;
+        }
+        .result.error {
+            background: #f8d7da;
+            color: #721c24;
+            border-left: 4px solid #dc3545;
+        }
+        .result.info {
+            background: #e8f0fe;
+            color: #1a73e8;
+            border-left: 4px solid #1a73e8;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        th {
+            background: #f8f9fa;
+            color: #333;
+            font-weight: 600;
+        }
+        tr:hover {
+            background: #f5f5f5;
+        }
+        .batch-area textarea {
+            font-family: monospace;
+        }
+        .auth-list {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+        .badge {
+            background: #667eea;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            display: inline-block;
+            margin: 4px;
+        }
+        @media (max-width: 768px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+            .full-width {
+                grid-column: span 1;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🎓 基于区块链的学历证书防伪核验系统</h1>
+    
+    <div class="tabs">
+        <button class="tab-btn active" onclick="showTab('school')">🏫 高校端 · 颁发证书</button>
+        <button class="tab-btn" onclick="showTab('company')">🏢 企业端 · 核验证书</button>
+        <button class="tab-btn" onclick="showTab('graduate')">👨‍🎓 毕业生端 · 授权管理</button>
+    </div>
+
+    <!-- 高校端 -->
+    <div id="schoolTab" class="dashboard">
+        <div class="card">
+            <h2>📜 颁发新证书</h2>
+            <div class="form-group">
+                <label>证书编号 *</label>
+                <input type="text" id="certId" placeholder="例如：CERT20240001">
+            </div>
+            <div class="form-group">
+                <label>学生姓名 *</label>
+                <input type="text" id="studentName" placeholder="例如：张三">
+            </div>
+            <div class="form-group">
+                <label>身份证号</label>
+                <input type="text" id="idCard" placeholder="18位身份证号">
+            </div>
+            <div class="form-group">
+                <label>毕业院校 *</label>
+                <input type="text" id="school" placeholder="例如：清华大学">
+            </div>
+            <div class="form-group">
+                <label>专业</label>
+                <input type="text" id="major" placeholder="例如：计算机科学与技术">
+            </div>
+            <button onclick="issueCertificate()">✨ 颁发上链</button>
+            <div id="issueResult" class="result"></div>
+        </div>
+        
+        <div class="card">
+            <h2>📋 证书名录</h2>
+            <button onclick="loadAllCertificates()" style="margin-bottom:15px">🔄 刷新列表</button>
+            <div style="overflow-x:auto">
+                <table id="certTable">
+                    <thead>
+                        <tr><th>证书编号</th><th>姓名</th><th>院校</th><th>状态</th></tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- 企业端 -->
+    <div id="companyTab" class="dashboard" style="display:none">
+        <div class="card">
+            <h2>🔍 单证书核验</h2>
+            <div class="form-group">
+                <label>证书编号</label>
+                <input type="text" id="queryId" placeholder="输入证书编号">
+            </div>
+            <div class="form-group">
+                <label>企业名称</label>
+                <input type="text" id="companyName" placeholder="例如：腾讯科技">
+            </div>
+            <button onclick="verifyCertificate()">🔎 核验证书</button>
+            <div id="verifyResult" class="result"></div>
+        </div>
+        
+        <div class="card">
+            <h2>📊 批量核验</h2>
+            <div class="form-group">
+                <label>证书编号列表（每行一个）</label>
+                <textarea id="batchIds" rows="5" placeholder="CERT001&#10;CERT002&#10;CERT003"></textarea>
+            </div>
+            <div class="form-group">
+                <label>企业名称</label>
+                <input type="text" id="batchCompany" placeholder="例如：腾讯科技">
+            </div>
+            <button onclick="batchVerify()">⚡ 批量核验</button>
+            <button onclick="exportBatchResult()" style="margin-left:10px; background:#28a745">📎 导出结果</button>
+            <div id="batchResult" class="result"></div>
+        </div>
+    </div>
+
+    <!-- 毕业生端 -->
+    <div id="graduateTab" class="dashboard" style="display:none">
+        <div class="card">
+            <h2>🔐 授权管理</h2>
+            <div class="form-group">
+                <label>我的证书编号</label>
+                <input type="text" id="graduateCertId" placeholder="输入你的证书编号">
+            </div>
+            <div class="form-group">
+                <label>我的姓名</label>
+                <input type="text" id="graduateName" placeholder="输入你的姓名">
+            </div>
+            <div class="form-group">
+                <label>企业名称</label>
+                <input type="text" id="authorizeCompany" placeholder="要授权的企业名称">
+            </div>
+            <button onclick="addAuthorization()" style="background:#28a745">✅ 授权该企业</button>
+            <button onclick="removeAuthorization()" style="background:#dc3545">❌ 取消授权</button>
+            <div id="authResult" class="result"></div>
+        </div>
+        
+        <div class="card">
+            <h2>📋 已授权企业</h2>
+            <div class="form-group">
+                <label>证书编号</label>
+                <input type="text" id="queryAuthCertId" placeholder="输入证书编号查询">
+            </div>
+            <button onclick="loadAuthorizedCompanies()">🔍 查询授权</button>
+            <div id="authList" class="auth-list"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const API_BASE = 'http://localhost:8080/api';
+    let batchResultData = [];
+
+    function showTab(tab) {
+        document.getElementById('schoolTab').style.display = tab === 'school' ? 'grid' : 'none';
+        document.getElementById('companyTab').style.display = tab === 'company' ? 'grid' : 'none';
+        document.getElementById('graduateTab').style.display = tab === 'graduate' ? 'grid' : 'none';
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        if (tab === 'school') document.querySelector('.tab-btn').classList.add('active');
+        if (tab === 'company') document.querySelectorAll('.tab-btn')[1].classList.add('active');
+        if (tab === 'graduate') document.querySelectorAll('.tab-btn')[2].classList.add('active');
+        if (tab === 'school') loadAllCertificates();
+    }
+
+    async function issueCertificate() {
+        const data = {
+            certId: document.getElementById('certId').value,
+            studentName: document.getElementById('studentName').value,
+            idCard: document.getElementById('idCard').value,
+            school: document.getElementById('school').value,
+            major: document.getElementById('major').value
+        };
+        if (!data.certId || !data.studentName || !data.school) {
+            document.getElementById('issueResult').innerHTML = '<div class="result error">❌ 请填写证书编号、学生姓名和毕业院校</div>';
+            return;
+        }
+        try {
+            const res = await fetch(`${API_BASE}/certificates`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            const result = await res.json();
+            if (result.success) {
+                document.getElementById('issueResult').innerHTML = `<div class="result success">✅ ${result.message}</div>`;
+                loadAllCertificates();
+                document.getElementById('certId').value = '';
+                document.getElementById('studentName').value = '';
+                document.getElementById('idCard').value = '';
+                document.getElementById('school').value = '';
+                document.getElementById('major').value = '';
+            } else {
+                document.getElementById('issueResult').innerHTML = `<div class="result error">❌ ${result.error}</div>`;
+            }
+        } catch(e) { 
+            document.getElementById('issueResult').innerHTML = `<div class="result error">❌ 错误：${e.message}</div>`;
+        }
+    }
+
+    async function verifyCertificate() {
+        const certId = document.getElementById('queryId').value;
+        const company = document.getElementById('companyName').value;
+        if (!certId) { 
+            document.getElementById('verifyResult').innerHTML = '<div class="result error">❌ 请输入证书编号</div>';
+            return;
+        }
+        try {
+            const headers = company ? { 'X-Company': company } : {};
+            const res = await fetch(`${API_BASE}/certificates/${certId}`, { headers });
+            if (!res.ok) throw new Error('证书不存在');
+            const result = await res.json();
+            const c = result.certificate;
+            let html = `<div class="result success">✅ 证书真实有效<br><br>
+                        📄 证书编号：${c.certId}<br>
+                        👤 学生姓名：${c.studentName}<br>
+                        🏫 毕业院校：${c.school}<br>
+                        📊 证书状态：${c.status === 'active' ? '✅ 有效' : '❌ 已注销'}<br>
+                        🆔 身份证号：${c.idCard}<br>`;
+            if (c.detailLevel === 'masked') html += `<br><span style="color:orange">⚠️ ${c.message}</span>`;
+            if (c.detailLevel === 'full') html += `<br><span style="color:green">✅ 已获得毕业生授权，查看完整信息</span>`;
+            html += `</div>`;
+            document.getElementById('verifyResult').innerHTML = html;
+        } catch(e) { 
+            document.getElementById('verifyResult').innerHTML = `<div class="result error">❌ ${e.message}</div>`;
+        }
+    }
+
+    async function batchVerify() {
+        const idsText = document.getElementById('batchIds').value;
+        const company = document.getElementById('batchCompany').value;
+        if (!idsText.trim()) { 
+            document.getElementById('batchResult').innerHTML = '<div class="result error">❌ 请输入证书编号</div>';
+            return;
+        }
+        const certIds = idsText.split('\n').filter(id => id.trim().length > 0);
+        try {
+            const res = await fetch(`${API_BASE}/certificates/batch-verify`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ certIds, companyName: company })
+            });
+            const result = await res.json();
+            batchResultData = result.results;
+            let html = `<div class="result success">📊 批量核验完成<br>总数：${result.total}，有效：${result.valid}</div>`;
+            html += `<table style="margin-top:15px">`;
+            html += '<thead><tr><th>证书编号</th><th>姓名</th><th>学校</th><th>状态</th><th>身份证号</th></tr></thead><tbody>';
+            result.results.forEach(r => {
+                html += `<tr>
+                            <td>${r.certId}</td>
+                            <td>${r.studentName || '-'}</td>
+                            <td>${r.school || '-'}</td>
+                            <td>${r.isValid ? (r.status === 'active' ? '✅有效' : '❌已注销') : '❌不存在'}</td>
+                            <td>${r.idCard || '-'}</td>
+                         </tr>`;
+            });
+            html += '</tbody></table>';
+            document.getElementById('batchResult').innerHTML = html;
+        } catch(e) { 
+            document.getElementById('batchResult').innerHTML = `<div class="result error">❌ ${e.message}</div>`;
+        }
+    }
+
+    function exportBatchResult() {
+        if (batchResultData.length === 0) { alert('暂无批量核验结果'); return; }
+        let csv = '证书编号,姓名,学校,状态,身份证号\n';
+        batchResultData.forEach(r => {
+            csv += `${r.certId},${r.studentName || ''},${r.school || ''},${r.status === 'active' ? '有效' : (r.isValid ? '已注销' : '不存在')},${r.idCard || ''}\n`;
+        });
+        const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `batch_verify_${new Date().toISOString().slice(0,19)}.csv`;
+        link.click();
+    }
+
+    async function addAuthorization() {
+        const certId = document.getElementById('graduateCertId').value;
+        const studentName = document.getElementById('graduateName').value;
+        const company = document.getElementById('authorizeCompany').value;
+        if (!certId || !studentName || !company) { 
+            document.getElementById('authResult').innerHTML = '<div class="result error">❌ 请填写完整信息</div>';
+            return;
+        }
+        try {
+            const res = await fetch(`${API_BASE}/auth/authorize`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ certId, studentName, companyName: company, action: 'add' })
+            });
+            const result = await res.json();
+            if (result.success) {
+                document.getElementById('authResult').innerHTML = `<div class="result success">✅ 已授权 "${company}" 查询您的证书</div>`;
+                loadAuthorizedCompanies();
+            }
+        } catch(e) { 
+            document.getElementById('authResult').innerHTML = `<div class="result error">❌ ${e.message}</div>`;
+        }
+    }
+
+    async function removeAuthorization() {
+        const certId = document.getElementById('graduateCertId').value;
+        const studentName = document.getElementById('graduateName').value;
+        const company = document.getElementById('authorizeCompany').value;
+        if (!certId || !studentName || !company) { 
+            document.getElementById('authResult').innerHTML = '<div class="result error">❌ 请填写完整信息</div>';
+            return;
+        }
+        try {
+            const res = await fetch(`${API_BASE}/auth/authorize`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ certId, studentName, companyName: company, action: 'remove' })
+            });
+            const result = await res.json();
+            if (result.success) {
+                document.getElementById('authResult').innerHTML = `<div class="result success">✅ 已取消 "${company}" 的授权</div>`;
+                loadAuthorizedCompanies();
+            }
+        } catch(e) { 
+            document.getElementById('authResult').innerHTML = `<div class="result error">❌ ${e.message}</div>`;
+        }
+    }
+
+    async function loadAuthorizedCompanies() {
+        const certId = document.getElementById('queryAuthCertId').value;
+        if (!certId) { 
+            document.getElementById('authList').innerHTML = '请输入证书编号';
+            return;
+        }
+        try {
+            const res = await fetch(`${API_BASE}/auth/${certId}`);
+            const result = await res.json();
+            const companies = result.authorizedCompanies || [];
+            if (companies.length === 0) {
+                document.getElementById('authList').innerHTML = '📭 暂无授权企业';
+            } else {
+                let html = '<strong>✅ 已授权以下企业查询您的完整证书信息：</strong><br><br>';
+                companies.forEach(c => {
+                    html += `<span class="badge">🏢 ${c}</span>`;
+                });
+                document.getElementById('authList').innerHTML = html;
+            }
+        } catch(e) { 
+            document.getElementById('authList').innerHTML = `❌ ${e.message}`;
+        }
+    }
+
+    async function loadAllCertificates() {
+        try {
+            const res = await fetch(`${API_BASE}/certificates`);
+            const result = await res.json();
+            const tbody = document.querySelector('#certTable tbody');
+            tbody.innerHTML = '';
+            if (result.certificates && result.certificates.length > 0) {
+                result.certificates.forEach(c => {
+                    const row = tbody.insertRow();
+                    row.insertCell(0).innerText = c.certId;
+                    row.insertCell(1).innerText = c.studentName;
+                    row.insertCell(2).innerText = c.school;
+                    row.insertCell(3).innerHTML = c.status === 'active' ? '✅ 有效' : '❌ 已注销';
+                });
+            } else {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center">暂无证书数据</td></tr>';
+            }
+        } catch(e) { console.error(e); }
+    }
+
+    loadAllCertificates();
+</script>
+</body>
+</html>
